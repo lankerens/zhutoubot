@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import java.text.DecimalFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,22 +55,25 @@ public class CheckNode{
      *  线程执行
      */
     // 1点-23点 每15分钟执行一次
-//    @Scheduled(fixedRate = 600000)
     @Scheduled(cron = "0 0/15 1-23 * * ?")
     public void task() {
-        if(task) return ;
+        if(task) {
+            System.out.println("时间: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "失败次数过多在休眠中, 直接return");
+            return ;
+        }
         CheckNode nodeInfo = new CheckNode();
         try {
             if(falseCount > 8) {
+                System.out.println("falseCount > 8 失败次数太多了 开始睡觉97分钟. ");
                 task = true;
-                // 两个小时
+                // 97分钟
                 Thread.sleep(60000 * 97);
                 task = false;
                 flag = true;
             }
             String content = nodeInfo.getNodes(false);
             if(!Objects.equals("", content)) nodeInfo.sendMessage(content);
-            System.out.println("---------------过了一遍流程--------------");
+            System.out.println("时间: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "---------------定时任务完整执行完一次[自动检测节点情况]--------------");
         }catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -91,9 +96,9 @@ public class CheckNode{
         //执行请求操作
         try {
             Response response = client.newCall(request).execute();
-            System.out.println("登陆请求后 - 响应码：" + response.code());
+            System.out.println("登陆请求返回响应码：" + response.code());
             if(response.isSuccessful()){
-                System.out.println("flag设置为 flase 了");
+                System.out.println("登录成功：flag = false");
                 flag = false;
                 falseCount = 0;
                 List<String> cookies = response.headers().values("Set-Cookie");
@@ -197,6 +202,8 @@ public class CheckNode{
                                 // 中转的恢复了
                                 onlineSb.append(node.getName()).append(" 中转机好了 \r\n");
                                 offLineMap.remove(node.getType() + node.getId());
+                            } else {
+                                //TODO
                             }
                         }
                     }
@@ -228,7 +235,7 @@ public class CheckNode{
 
                 response.close();
             } catch (Exception e) {
-                System.out.println(e.getMessage());
+                System.out.println("getNodes这里发生错误" + e.getMessage());
             }
 
         }while (flag);
@@ -280,17 +287,18 @@ public class CheckNode{
                 } else {
 //                    if(response.code() == 403)
                     flag = true;
-                    System.out.println("流量消耗 flag设置为 " + flag);
 
                     if(falseCount > 8) {
-                        sb.append("大佬，惹不起，现在网站出问题了.. \r\n");
+                        sb.append("拜托, 现在网站出问题了..等会再查 \r\n");
                         // 休息两个小时
                         flag = false ;
                     }
+
+                    System.out.println("流量消耗查询失败 flag = " + flag);
                 }
                 response.close();
             }catch (Exception e) {
-                System.out.println(e.getMessage());
+                System.out.println("usages这里发生错误： " + e.getMessage());
             }
 
         }while (flag);
@@ -311,7 +319,7 @@ public class CheckNode{
                     .setText(content);
 
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println("sendMessage 这里发生错误: " + e.getMessage());
         }
     }
 

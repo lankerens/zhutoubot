@@ -24,7 +24,7 @@ public class ZhutoubotApplication {
             // 注册我们的机器人
             botsApi.registerBot(new BotConfig());
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            System.out.println("注册机器人出现错误: " + e.getMessage());
         }
     }
 

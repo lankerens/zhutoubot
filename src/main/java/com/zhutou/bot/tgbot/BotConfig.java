@@ -26,7 +26,7 @@ public class BotConfig  extends TelegramLongPollingBot{
             boolean isSuperGroupMessage = update.getMessage().isSuperGroupMessage();
             String commandText = update.getMessage().getText();
             Long chatId = update.getMessage().getChatId();
-            System.out.println("当前时间：" + LocalTime.now().getHour() + ": " + LocalTime.now().getMinute());
+            System.out.println("用户发送命令" + commandText + "现在时间：" + LocalTime.now().getHour() + ": " + LocalTime.now().getMinute());
 
 
             /**
@@ -73,11 +73,19 @@ public class BotConfig  extends TelegramLongPollingBot{
                 message = new SendMessage()
                         .setChatId(chatId)
                         .setText("抱歉不支持私人消息");
+            } else {
+                String[] answer = {"大佬，惹不起..", "发的什么玩意,bongzhu_bot没有这个指令", "我在很认真的工作的..", "我真的没有偷懒."};
+                int index = (int) (Math.random() * 4);
+                message = new SendMessage()
+                        .setChatId(chatId)
+                        .setText(answer[index]);
             }
+
             try {
-                execute(message);
+                if(message != null)
+                    execute(message);
             } catch (TelegramApiException e) {
-                e.printStackTrace();
+                System.out.println("BotConfig这里出现错误：" + e.getMessage());
             }
         }
 
