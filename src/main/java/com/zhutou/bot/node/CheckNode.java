@@ -1,16 +1,21 @@
 package com.zhutou.bot.node;
 
 import com.alibaba.fastjson.JSONObject;
+import com.zhutou.bot.bean.CheckUser;
 import com.zhutou.bot.bean.Node;
 import com.zhutou.bot.bean.Usage;
 import com.zhutou.bot.constant.Constant;
 import com.zhutou.bot.lucky.LuckyGuy;
+import com.zhutou.bot.mapper.CheckUserMapper;
+import com.zhutou.bot.utils.GetBeanUtil;
 import okhttp3.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
@@ -24,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 public class CheckNode {
+
     /**
      * 登陆 cookie 是否还有效 - 两个小时有效时间
      */
@@ -65,7 +71,7 @@ public class CheckNode {
     }
 
     /**
-     * 线程执行
+     * 定时节点检测
      */
     // 1点-23点 每20分钟执行一次
 //    @Scheduled(fixedRate = 60000)
@@ -179,10 +185,19 @@ public class CheckNode {
                                 // 节点挂了，不管中转还在不在 | 直连
                                 offlineSb.append("> ").append(n.getName()).append("\r\n");
                                 offLineMap.put(n.getType() + n.getId(), n.getName());
-                            } else if (n.getAvailable_status() == 2 && offLineMap.get(n.getType() + n.getId()) != null) {
-                                // 节点恢复了，中转在不在不知道
-                                onlineSb.append("> ").append(n.getName()).append("\r\n");
-                                offLineMap.remove(n.getType() + n.getId());
+                            } else if (n.getAvailable_status() != 0 && offLineMap.get(n.getType() + n.getId()) != null) {
+                                boolean ping = LuckyGuy.ping(n.getHost());
+                                if(ping) {
+                                    // 节点恢复了，中转在不在不知道
+                                    onlineSb.append("> ").append(n.getName()).append("\r\n");
+                                    offLineMap.remove(n.getType() + n.getId());
+                                }
+                            } else if (n.getAvailable_status() != 0) {
+                                boolean ping = LuckyGuy.ping(n.getHost());
+                                if(!ping) {
+                                    offlineSb.append("> ").append(n.getName()).append("\r\n");
+                                    offLineMap.put(n.getType() + n.getId(), n.getName());
+                                }
                             }
 
                             // 判断中转是否变化
@@ -192,22 +207,9 @@ public class CheckNode {
                                     if (!zhongNodeRecord.getHost().equals(n.getHost()) || !zhongNodeRecord.getPort().equals(n.getPort())) {
                                         // 中转地址或者端口发生改变了
                                         transitSb.append("> ").append(zhongNodeRecord.getName()).append("\r\n");
-                                    } else if (n.getAvailable_status() == 1 && n.getParent_id() != null) {
-                                        // 中转状态在线但是没人上报流量-- 怀疑一下- 要么是单纯没人用、要么是节点还在，中转挂了..-> 如果节点挂了，应该是红色的，而且上面应该就判断出来了.
-                                        boolean ping = LuckyGuy.ping(n.getHost());
-                                        if (!ping) {
-                                            if (offLineMap.get(n.getType() + n.getId()) == null) {
-                                                // ping不通，中转估计挂了
-                                                offlineSb.append("> ").append(n.getName()).append(" 的中转好像有点问题").append("\r\n");
-                                                offLineMap.put(n.getType() + n.getId(), n.getName());
-                                            }
-                                        } else if(offLineMap.get(n.getType() + n.getId()) != null){
-                                            onlineSb.append("> ").append(n.getName()).append("\r\n");
-                                            offLineMap.remove(n.getType() + n.getId());
-                                        }
                                     }
                                 } else {
-                                    // 新增中转 | 直连 -- 新增->对立的直连一般下线..
+                                    // 新增中转 | 直连 -- 新增 -> 对立的直连一般下线..
                                     addNodeSb.append("> ").append(n.getName()).append("\r\n");
 
                                     // 新增了中转  | 直连，那就加上这个ping值相应的节点...
@@ -221,9 +223,6 @@ public class CheckNode {
                                 // 主要是 ping 用的，只需要加中转的节点....
                                 nodeYinShenMap.put(n.getName(), n.getType() + n.getId());
                             }
-                        } else {
-                            // TODO
-
                         }
                     }
                     if (nodeRecordMap.size() == 0) {
@@ -258,7 +257,7 @@ public class CheckNode {
                 response.close();
             } catch (Exception e) {
                 System.out.println("getNodes这里发生错误" + e.getMessage());
-                if(isCommand)
+                if (isCommand)
                     sendMessage("完犊子,程序好像坏了,再发一遍试试.");
             }
 
@@ -345,6 +344,7 @@ public class CheckNode {
 
     /**
      * 发送消息
+     *
      * @param content
      * @throws Exception
      */
@@ -359,6 +359,45 @@ public class CheckNode {
 
         } catch (Exception e) {
             System.out.println("sendMessage 这里发生错误: " + e.getMessage());
+        }
+    }
+
+
+    /**
+     * 持久化用户的积分数据
+     *  2天一次 3.30分开始执行代码
+     * @param
+     */
+    @Scheduled(cron = "0 30 3 1/2 * ?")
+    public void saveUserInfoMap(){
+        CheckUserMapper checkUserMapper = GetBeanUtil.getBeanUtil.getCheckUserMapper();
+        StringBuffer sb = new StringBuffer();
+        sb.append("时间: ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).append(" --- 执行成功..");
+        try {
+            Collection<CheckUser> values = LuckyGuy.scoreMap.values();
+            System.out.println(values);
+            for (CheckUser user: values) {
+                if(checkUserMapper.isUserExist(user.getUserId()) > 0) {
+                    // 存在 --> 更新
+                    checkUserMapper.updateUserInfoMap(user);
+                } else {
+                    checkUserMapper.saveUserInfoMap(user);
+                }
+            }
+        }catch (Exception e) {
+            sb = new StringBuffer();
+            sb.append("时间: ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).append(" --- 执行失败.. \r\n")
+                    .append("持久化到数据库出问题了:  ").append(e.getMessage());
+            System.out.println(sb);
+        }
+
+        SendMessage message = new SendMessage()
+                .setChatId(Constant.MY_SELF_ID)
+                .setText(sb.toString());
+        try {
+            sender.execute(message);
+        } catch (TelegramApiException e) {
+            System.out.println("持久化用户积分数据 这里发送消息给zhutou 发生错误: " + e.getMessage());
         }
     }
 

@@ -1,0 +1,16 @@
+# debug
+spring:
+  datasource:
+    url: jdbc:sqlite:/Users/apple/Desktop/test/checkUser.sqlite
+    driver-class-name: org.sqlite.JDBC
+
+# 线上
+#spring:
+#  datasource:
+#    url: jdbc:sqlite:/zhutou/sql/checkUser.sqlite
+#    driver-class-name: org.sqlite.JDBC
+
+#  sql:
+#    init:
+#      mode: always
+#      schema-locations: classpath*:static/main_checkuser_info.sql

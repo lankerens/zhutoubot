@@ -1,5 +1,6 @@
 package com.zhutou.bot.node;
 
+
 /**
  * 统计在线节点个数
  */
@@ -12,6 +13,10 @@ public class CountNode {
 
     public String usage() throws Exception {
         return cn.usage();
+    }
+
+    public void saveUserInfoMap(){
+        cn.saveUserInfoMap();
     }
 
 }
