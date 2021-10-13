@@ -7,8 +7,8 @@ package com.zhutou.bot.node;
 public class CountNode {
     public CheckNode cn = new CheckNode();
 
-    public String countNode() throws Exception {
-        return cn.getNodes(true);
+    public String nodeStatus() throws Exception {
+        return cn.nodeStatus();
     }
 
     public String usage() throws Exception {

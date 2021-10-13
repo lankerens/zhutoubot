@@ -43,9 +43,9 @@ public class LuckyGuy {
 
     public static void main(String[] args) {
         try {
-            Integer i = 2018426990;
-            System.out.println(i);
+           StringBuffer sb = new StringBuffer();
 
+            System.out.println(Objects.equals("", sb.toString()));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -126,7 +126,7 @@ public class LuckyGuy {
                     .append("您的积分不足 ").append(sub).append(" 分呀,获取积分再来吧.😢 \r\n");
         } else {
             int all = 60000,
-                    weightA = 14000, weightB = 12500, weightC = 5128, weightD = 3000, weightE = 2580, weightF = 1280, weightG = 8,
+                    weightA = 13000, weightB = 11000, weightC = 7128, weightD = 5828, weightE = 3380, weightF = 2280, weightG = 8,
                     weightH = all - weightA - weightB - weightC - weightD - weightE - weightF - weightG;
             int num = new Random().nextInt(60001);
 
@@ -203,8 +203,12 @@ public class LuckyGuy {
                 Integer flow = checkUser.getFlow();
                 if(flow >= i) {
                     checkUser.setFlow(flow - i);
-
-                    sb.append("🍰恭喜你,兑换 ").append(i).append(" MB成功,等待后台一天内加上.. 后续不会有通知,自行确认");
+                    sb.append("🚥已成功申请兑奖\r\n———————————————")
+                            .append("\r\n用户：").append(chatUserId)
+                            .append("\r\n账号：").append(split[2])
+                            .append("\r\n兑换流量：").append(i).append(" MB")
+                            .append("\r\n提交时间：").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                            .append("\r\n等待后台一天内加上.. 后续不会有通知,自行登陆官网确认.");
                     sendToZhutou = true;
                 } else {
                     sb.append("🔪别闹, 你库存里的流量不够.");
@@ -214,16 +218,20 @@ public class LuckyGuy {
                 Double days = checkUser.getDays();
                 if(days >= i && i >= 1) {
                     checkUser.setDays(days - i);
-
-                    sb.append("🍰恭喜你,兑换 ").append(i).append(" 天成功,等待后台一天内加上.. 后续不会有通知,自行确认");
+                    sb.append("🚥已成功申请兑奖\r\n———————————————")
+                            .append("\r\n用户：").append(chatUserId)
+                            .append("\r\n账号：").append(split[2])
+                            .append("\r\n兑换天数：").append(i).append(" 天")
+                            .append("\r\n提交时间：").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                            .append("\r\n等待后台一天内加上.. 后续不会有通知,自行登陆官网确认.");
                     sendToZhutou = true;
                 } else {
                     sb.append("🔪别闹, 你库存里的天数不够.");
                 }
             } else {
-                sb.append("流量兑换,只能整数,请注意格式如下：\r\n").append("例:dui m 123456@gmail.com 100\r\n")
-                        .append("天数兑换,只能整数, 请注意格式如下：\r\n").append("例:dui d 123456@gmail.com 2\r\n")
-                        .append("⚠️不要带少和带多空格. dui 前面自行加上斜杠");
+                sb.append("流量兑换,只能整数,请注意格式如下：\r\n").append("例:/dui m 123456@gmail.com 100\r\n")
+                        .append("天数兑换,只能整数, 请注意格式如下：\r\n").append("例:/dui d 123456@gmail.com 2\r\n")
+                        .append("⚠️不要带少和带多空格. dui 前面务必加上斜杠/");
             }
 
         }catch (Exception e) {
@@ -258,7 +266,7 @@ public class LuckyGuy {
      * @return
      */
     public static String checkNode(String nodeName) {
-        if (!canCheckNow) return "我忘记执行到哪儿了，请20分钟左右后再试.. [机器人回复]";
+        if (!canCheckNow) return "机器人刚启动,初始化过程20分钟, 20分钟左右后才开放查询..[机器人回复]";
         String key = null;
         nodeName = nodeName.trim();
         for (String name : CheckNode.nodeYinShenMap.keySet()) {

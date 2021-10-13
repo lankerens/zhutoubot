@@ -1,10 +1,12 @@
 package com.zhutou.bot.utils;
 
 import com.zhutou.bot.bean.CheckUser;
+import com.zhutou.bot.constant.Constant;
 import com.zhutou.bot.lucky.LuckyGuy;
 import com.zhutou.bot.mapper.CheckUserMapper;
 import com.zhutou.bot.tgbot.BotConfig;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;

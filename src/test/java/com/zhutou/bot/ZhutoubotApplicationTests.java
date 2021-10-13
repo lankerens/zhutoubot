@@ -17,8 +17,10 @@ class ZhutoubotApplicationTests {
 
     @Test
     public void test(){
-
-//        System.out.println(GetBeanUtil.getBeanUtil.getCheckUserMapper());
+//        System.out.println(Constant.token);
+//        System.out.println(Constant.MY_SELF_ID_INT);
+//        System.out.println(Constant.loginDomain);
+//        System.out.println(Constant.MY_SELF_ID_LONG);
 
     }
 

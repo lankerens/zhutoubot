@@ -1,0 +1,6 @@
+# debug
+spring:
+  datasource:
+    url: jdbc:sqlite:/Users/apple/Desktop/test/checkUser22.sqlite
+    driver-class-name: org.sqlite.JDBC
+
