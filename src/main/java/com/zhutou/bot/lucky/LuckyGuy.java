@@ -2,8 +2,10 @@ package com.zhutou.bot.lucky;
 
 import com.zhutou.bot.bean.CheckUser;
 import com.zhutou.bot.constant.Constant;
+import com.zhutou.bot.mapper.CheckUserMapper;
 import com.zhutou.bot.node.CheckNode;
-import org.apache.commons.lang3.StringUtils;
+import com.zhutou.bot.utils.GetBeanUtil;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.DefaultAbsSender;
@@ -11,14 +13,13 @@ import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import javax.annotation.PostConstruct;
 import java.io.*;
 import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -28,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @create: 2021-09-26 13:10
  **/
 @Component
+@Getter
 public class LuckyGuy {
 
     /**
@@ -39,17 +41,35 @@ public class LuckyGuy {
      */
     public static Boolean canCheckNow = false;
 
+    /**
+     *  持久化类
+     */
+    @Autowired
+    private CheckUserMapper checkUserMapper;
 
+    public static LuckyGuy luckyGuy;
+
+    @PostConstruct
+    public void init() {
+        luckyGuy = this;
+        luckyGuy.checkUserMapper = this.checkUserMapper;
+    }
+
+    static DefaultAbsSender sender = new DefaultAbsSender(new DefaultBotOptions()) {
+        @Override
+        public String getBotToken() {
+            return Constant.token;
+        }
+    };
 
     public static void main(String[] args) {
         try {
-           StringBuffer sb = new StringBuffer();
+            System.out.println("新加坡01 xxxxx".substring(0, 5));
+            System.out.println("台湾01 xxxxx".substring(0, 5));
 
-            System.out.println(Objects.equals("", sb.toString()));
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
 
@@ -90,8 +110,8 @@ public class LuckyGuy {
         CheckUser user = getUser(chatUserId);
         sb.append("🏠 库存查询").append("\r\n");
         sb.append("———————————————\r\n");
-        sb.append("用户:").append(userName).append("\r\n");
-        sb.append("获得的积分: ").append(user.getScore()).append(" F \r\n");
+        sb.append("用户: ").append(userName).append("\r\n");
+        sb.append("获得的积分: ").append(user.getScore()).append(" 分 \r\n");
         sb.append("获得的流量: ").append(user.getFlow()).append(" MB \r\n");
         sb.append("获得的天数: ").append(user.getDays()).append(" 天 \r\n");
         return sb.toString();
@@ -126,40 +146,53 @@ public class LuckyGuy {
                     .append("您的积分不足 ").append(sub).append(" 分呀,获取积分再来吧.😢 \r\n");
         } else {
             int all = 60000,
-                    weightA = 13000, weightB = 11000, weightC = 7128, weightD = 5828, weightE = 3380, weightF = 2280, weightG = 8,
-                    weightH = all - weightA - weightB - weightC - weightD - weightE - weightF - weightG;
+                    weightA = 5000, weightB = 4800, weightC = 3000, weightD = 3000, weightE = 600, weightF = 3, weightG = 4,
+                    weightH = all - weightA - weightB - weightC - weightD - weightE - weightF;
             int num = new Random().nextInt(60001);
 
             sb.append(userName).append(" 您花费了").append(sub).append("积分\r\n");
             if (num <= weightA) {
                 // 30 %
-                sb.append("真棒, 积分+").append(num % 17).append(" ✌️[开发版] \r\n");
-                user.setScore(user.getScore() + (num % 17));
+                sb.append("真棒, 积分+").append(num % 28).append(" ✌️[开发版] \r\n");
+                user.setScore(user.getScore() + (num % 28));
             } else if (num <= weightA + weightB) {
                 sb.append("不错啊, 积分-").append(num % 33).append(" 💣[开发版] \r\n");
-                user.setScore(user.getScore() - (num % 33));
+                user.setScore(Math.max(user.getScore() - (num % 33), 0));
             } else if (num <= weightA + weightB + weightC) {
-                sb.append("这也可以,  积分+").append(num % 70).append(" 🍦[开发版] \r\n");
-                user.setScore(user.getScore() + (num % 70));
-            } else if (num <= weightA + weightB + weightC + weightD) {
                 sb.append("你这什么运气啊, 流量+").append(num % 108).append(" MB 🍰[开发版] \r\n");
                 user.setFlow(user.getFlow() + (num % 108));
-            } else if (num <= weightA + weightB + weightC + weightD + weightE) {
+            } else if (num <= weightA + weightB + weightC + weightD) {
                 sb.append("你这什么运气啊, 流量-").append(num % 70).append(" MB 💣[开发版] \r\n");
-                user.setFlow(user.getFlow() - (num % 70));
-            } else if (num <= weightA + weightB + weightC + weightD + weightE + weightF) {
+                user.setFlow(Math.max(user.getFlow() - (num % 70), 0));
+            } else if (num <= weightA + weightB + weightC + weightD + weightE) {
                 // double 保留3位小数
                 DecimalFormat df = new DecimalFormat("0.00");
                 String format = df.format((Math.random() * 0.6));
                 sb.append("我去,金色 ！！ 普通，天数+").append(format).append(" 天 🍰[开发版] \r\n");
                 user.setDays(user.getDays() + Double.parseDouble(format));
-            } else if (num <= weightA + weightB + weightC + weightD + weightE + weightF + weightG) {
+            } else if (num <= weightA + weightB + weightC + weightD + weightE + weightF) {
                 // vcode = [5213600, 14076774]
                 int vcode = (int) (((Math.random() * 17) + 10) * 521362);
-                sb.append("我去,金色传说🥚[开发版]\r\n")
+                sb.append("我去,金色传说🎴[开发版]\r\n")
                         .append("此奖品只记录一次--请及时兑换\r\n")
-                        .append("凭兑换码：").append(vcode).append(" 联系 '@zhutoucyou' 领奖 \r\n");
+                        .append("兑换码机器人 已 私聊发送.\r\n");
                 user.setBigLuck(vcode);
+
+                SendMessage toUser = new SendMessage()
+                        .setChatId(Constant.MY_SELF_ID)
+                        .setText("凭兑换码: " + vcode + ", 联 系 '" + Constant.CONTACT_ME + "' 领奖 \r\n");
+
+                SendMessage toRoot = new SendMessage()
+                        .setChatId(Constant.MY_SELF_ID)
+                        .setText("用户id: " + chatUserId + "\r\n用户名称: " + userName + "\r\n兑换码: " + vcode);
+                try {
+                    // 私发给用户.
+                    sender.execute(toUser);
+                    // 私发通知我.
+                    sender.execute(toRoot);
+                } catch (TelegramApiException e) {
+                    System.out.println("用户 =  " + userName + ", 兑换码 = " + vcode + "出现了问题竟然, " + e.getMessage());
+                }
             } else {
                 // 未中奖
                 String[] lucky = {"恭喜你, 什么都没抽到 🎉", "抽不中啊，换个姿势吧 🎉", "再给你一次机会🎉",
@@ -175,16 +208,46 @@ public class LuckyGuy {
     }
 
 
-
-
-
-
-    static DefaultAbsSender sender = new DefaultAbsSender(new DefaultBotOptions()) {
-        @Override
-        public String getBotToken() {
-            return Constant.token;
+    /**
+     * 积分排行榜
+     *  - 总排行榜.
+     *  - 今天参与抽奖的输赢情况.
+     */
+    public static String leaderBoard(){
+        StringBuffer sb = new StringBuffer();
+        if(CheckNode.checkUserList == null) {
+            CheckNode.checkUserList = LuckyGuy.luckyGuy.getCheckUserMapper().loadAll();
         }
-    };
+        sb.append("🌈今日的积分榜").append("\r\n");
+        sb.append("———————————————\r\n");
+        // 从大到小排序
+        TreeMap<Integer, Integer> treeMap = new TreeMap<>(new Comparator<Integer>() {
+            @Override
+            public int compare(Integer a, Integer b) {
+                return b - a;
+            }
+        });
+        for (CheckUser cu : CheckNode.checkUserList) {
+            Integer newNum = scoreMap.get(cu.getUserId()).getScore();
+            Integer oldNum = cu.getScore();
+            boolean b = !oldNum.equals(newNum);
+            if(b) {
+                treeMap.put(newNum - oldNum, cu.getUserId());
+            }
+        }
+
+        if(treeMap.size() > 0) {
+            int index = 1;
+            for (Integer i: treeMap.keySet()) {
+                sb.append(index++).append(". 用户 ").append(treeMap.get(i)).append(" 积分变化: ").append(i > 0 ? "+" : "").append(i).append("\r\n");
+            }
+        } else {
+            sb.append("今日还没人抽奖呢😓").append("\r\n");
+        }
+        return sb.toString();
+    }
+
+
 
     /**
      * 兑换奖品的
@@ -237,7 +300,7 @@ public class LuckyGuy {
         }catch (Exception e) {
             System.out.println("兑奖兑出错了: " + e.getMessage());
             sb = new StringBuffer();
-            sb.append("确认你的数字都是整数不要搞怪, 如果你的没问题, 就是程序出错了, 那么再发送一遍. 还有问题请反馈 '@zhutoucyou' 谢谢🙏");
+            sb.append("确认你的数字都是整数不要搞怪, 如果你的没问题, 就是程序出错了, 那么再发送一遍. 还有问题请反馈 '").append(Constant.CONTACT_ME).append("' 谢谢🙏");
             sendToZhutou = false;
         }
 
@@ -275,7 +338,7 @@ public class LuckyGuy {
                 break;
             }
         }
-        if (key == null) return "你查询的节点名字没写对吧..[仅能查询中转节点] [机器人回复]";
+        if (key == null) return "你查询的节点名字没写对吧..\r\n请正确写入节点名称-例如 /checknode 香港01";
         String typeId = CheckNode.nodeYinShenMap.get(key);
         try {
             boolean b = ping(CheckNode.nodeRecordMap.get(typeId).getHost());

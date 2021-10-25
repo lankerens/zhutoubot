@@ -42,13 +42,14 @@ public class BotConfig extends TelegramLongPollingBot {
                 if (commandText.contains("/help")) {
                     message = new SendMessage()
                             .setChatId(chatId)
-                            .setText("/nodestatus - 查看节点情况[非私聊] \r\n" +
-                                    "/usage - 昨天消耗的流量[非私聊] \r\n" +
-                                    "/checknode  - 根据名字检测中转节点是否在线[非私聊] \r\n" +
+                            .setText("/nodestatus - 查看节点情况[群指令] \r\n" +
+                                    "/usage - 昨天消耗的流量[群指令] \r\n" +
+                                    "/checknode  - 根据名字检测中转节点是否在线[群指令] \r\n" +
                                     "/checkin - 签到✌️[可私聊] \r\n" +
                                     "/backpack - 我的库存🏠[可私聊] \r\n" +
                                     "/lucky - 转盘抽奖💥[可私聊] \r\n" +
-                                    "/dui - 兑奖👋[私聊] \r\n" +
+                                    "/dui - 兑奖👋[私聊指令] \r\n" +
+                                    "/leaderboard - 今日积分排行榜[可私聊]" +
                                     "");
                 } else if (isSuperGroupMessage && commandText.contains("/nodestatus")) {
                     /**
@@ -86,7 +87,7 @@ public class BotConfig extends TelegramLongPollingBot {
                      */
                     String content = "出错了.";
                     String nodeName = commandText.substring(10);
-                    if (StringUtils.isBlank(nodeName)) content = "请加上中转的节点名称-例如 checknode 香港01";
+                    if (StringUtils.isBlank(nodeName) || ("@" + Constant.botName).equals(nodeName)) content = "请加上中转的节点名称-例如 /checknode 香港01";
                     else if (LocalTime.now().getHour() == 0 && LocalTime.now().getMinute() < 30)
                         content = "抱歉，机器人休息时间0:00 - 0:30";
                     else content = LuckyGuy.checkNode(nodeName);
@@ -103,7 +104,7 @@ public class BotConfig extends TelegramLongPollingBot {
                      */
                     String content = "出错了.";
                     try {
-                        content = LuckyGuy.checkIn(groupUser.getId(), groupUser.getFirstName());
+                        content = LuckyGuy.checkIn(groupUser.getId(), groupUser.getFirstName() + (groupUser.getLastName() == null ? "" : groupUser.getLastName()));
                         message = new SendMessage()
                                 .setChatId(chatId)
                                 .setText(content);
@@ -116,7 +117,7 @@ public class BotConfig extends TelegramLongPollingBot {
                      */
                     String content = "出错了.";
                     try {
-                        content = LuckyGuy.getUserScore(groupUser.getId(), groupUser.getFirstName());
+                        content = LuckyGuy.getUserScore(groupUser.getId(), groupUser.getFirstName() + (groupUser.getLastName() == null ? "" : groupUser.getLastName()));
                         message = new SendMessage()
                                 .setChatId(chatId)
                                 .setText(content);
@@ -130,7 +131,23 @@ public class BotConfig extends TelegramLongPollingBot {
                      */
                     String content = "出错了.";
                     try {
-                        content = LuckyGuy.lucky(groupUser.getId(), groupUser.getFirstName(), LocalDateTime.now().toInstant(ZoneOffset.of("+8")).toEpochMilli());
+                        content = LuckyGuy.lucky(groupUser.getId(), groupUser.getFirstName() + (groupUser.getLastName() == null ? "" : groupUser.getLastName()),
+                                LocalDateTime.now().toInstant(ZoneOffset.of("+8")).toEpochMilli());
+                        message = new SendMessage()
+                                .setChatId(chatId)
+                                .setText(content);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                    }
+                } else if(commandText.contains("/leaderboard")){
+                    /**
+                     *  抽奖输赢情况
+                     */
+                    String content = "出错了.";
+                    if (LocalTime.now().getHour() == 0 && LocalTime.now().getMinute() < 30)
+                        content = "抱歉，机器人休息时间0:00 - 0:30";
+                    else content = LuckyGuy.leaderBoard();
+                    try {
                         message = new SendMessage()
                                 .setChatId(chatId)
                                 .setText(content);
@@ -167,9 +184,9 @@ public class BotConfig extends TelegramLongPollingBot {
                         System.out.println("zhutou的命令处理过程中出现了问题： " + e.getMessage());
                     }
 
-                } else if (update.getMessage().isUserMessage()) {
+                } else if (commandText.contains("/dui")) {
                     StringBuffer sb = new StringBuffer();
-                    if(commandText.contains("/dui")) {
+                    if(update.getMessage().isUserMessage()) {
                         try {
                             sb.append(LuckyGuy.RedeemPrizes(Math.toIntExact(chatId), commandText));
                         } catch (Exception e) {
@@ -177,14 +194,18 @@ public class BotConfig extends TelegramLongPollingBot {
                             sb.append("你的账号id太大了，数据溢出, 请联系 '@zhutoucyou'") ;
                         }
                     } else {
-                        sb.append("抱歉暂不支持其他的不支持私人消息");
+                        sb.append("兑奖只能通过私聊机器人申请.😓.");
                     }
+                    message = new SendMessage()
+                            .setChatId(chatId)
+                            .setText(sb.toString());
+                } else if(update.getMessage().isUserMessage()){
                     /**
                      *  私人消息
                      */
                     message = new SendMessage()
                             .setChatId(chatId)
-                            .setText(sb.toString());
+                            .setText("抱歉暂不支持其他的不支持私人消息");
                 } else {
                     String[] answer = {"大佬，惹不起..", "发的什么玩意,bongzhu_bot没有这个指令", "每次跟你打王者 我总希望对面有人来偷水晶 你会说我们家被偷了 这时我就很开心 原来我可以跟你有个家。",
                             "我真的没有偷懒.", "今天她终于叫了我的名字 虽然叫错了，但是没关系 我马上就去改名", "他朋友圈屏蔽我了，我陷入了沉思，大都是屏蔽家人，原来他把我当做她家人了，他好细节啊，我更爱他了",

@@ -2,6 +2,7 @@ package com.zhutou.bot;
 
 import com.zhutou.bot.bean.CheckUser;
 import com.zhutou.bot.constant.Constant;
+import com.zhutou.bot.lucky.LuckyGuy;
 import com.zhutou.bot.mapper.CheckUserMapper;
 import com.zhutou.bot.utils.GetBeanUtil;
 import org.junit.jupiter.api.Test;
@@ -13,14 +14,11 @@ import java.util.List;
 @SpringBootTest
 class ZhutoubotApplicationTests {
 
-
-
     @Test
     public void test(){
-//        System.out.println(Constant.token);
-//        System.out.println(Constant.MY_SELF_ID_INT);
-//        System.out.println(Constant.loginDomain);
-//        System.out.println(Constant.MY_SELF_ID_LONG);
+
+        System.out.println(LuckyGuy.luckyGuy.getCheckUserMapper());
+
 
     }
 

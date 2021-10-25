@@ -225,6 +225,11 @@ public class CheckNode {
                                 // 主要是 ping 用的，只需要加中转的节点....
                                 nodeYinShenMap.put(n.getName(), n.getType() + n.getId());
                             }
+                        } else {
+                            // 下架状态
+                            if(offLineMap.get(n.getType() + n.getId()) != null) {
+                                offLineMap.remove(n.getType() + n.getId());
+                            }
                         }
                     }
                     if (nodeRecordMap.size() == 0) {
@@ -316,7 +321,7 @@ public class CheckNode {
                             .append("\r\n上行流量：").append(df.format(u) + " G \r\n")
                             .append("下行流量：").append(df.format(d) + " G \r\n")
                             .append("总消耗：").append(df.format(total) + " G \r\n")
-                            .append("\r\n昨天流量消耗最多的是：").append(usages.get(0).getServer_name().substring(0, 5));
+                            .append("\r\n昨天流量消耗最多的是：").append(usages.get(0).getServer_name(), 0, 5);
 
                 } else {
                     flag = true;
@@ -370,16 +375,17 @@ public class CheckNode {
     }
 
 
+    public static List<CheckUser> checkUserList = null;
     /**
      * 持久化用户的积分数据
-     *  2天一次 3.30分开始执行代码
+     *  1天一次 00:05 开始执行代码
      * @param
      */
-    @Scheduled(cron = "0 30 3 1/2 * ?")
+    @Scheduled(cron = "0 5 0 1/1 * ?")
     public void saveUserInfoMap(){
         CheckUserMapper checkUserMapper = GetBeanUtil.getBeanUtil.getCheckUserMapper();
         StringBuffer sb = new StringBuffer();
-        sb.append("时间: ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).append(" --- 执行成功..");
+        sb.append("时间: ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).append(" --- 持久化到数据库执行成功..");
         try {
             Collection<CheckUser> values = LuckyGuy.scoreMap.values();
             for (CheckUser user: values) {
@@ -394,7 +400,7 @@ public class CheckNode {
             System.out.println(sb);
         }catch (Exception e) {
             sb = new StringBuffer();
-            sb.append("时间: ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).append(" --- 执行失败.. \r\n")
+            sb.append("时间: ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).append(" --- 持久化到数据库执行失败.. \r\n")
                     .append("持久化到数据库出问题了:  ").append(e.getMessage());
             System.out.println(sb);
         }
@@ -402,6 +408,9 @@ public class CheckNode {
         SendMessage message = new SendMessage()
                 .setChatId(Constant.MY_SELF_ID)
                 .setText(sb.toString());
+
+        // TODO 看看还能不能优化一下..
+        checkUserList = checkUserMapper.loadAll();
         try {
             sender.execute(message);
         } catch (TelegramApiException e) {

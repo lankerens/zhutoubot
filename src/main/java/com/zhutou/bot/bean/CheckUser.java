@@ -23,7 +23,7 @@ import java.time.ZoneOffset;
 public class CheckUser implements Serializable {
     Integer id;
     /**
-     * id
+     * 账号id
      */
     Integer userId;
     /**
